@@ -1,12 +1,17 @@
 " Vim global plugin for autoloading cscope databases.
-" Last Change: Fri Nov 30 17:03:47 CST 2001
+" Last Change: Mon Jan 28 11:59:05 CST 2002
 " Maintainer: Michael Conrad Tilsra <tadpol@tadpol.org>
-" Revision: 0.2
+" Revision: 0.3
 
 if exists("loaded_autoload_cscope")
 	finish
 endif
 let loaded_autoload_cscope = 1
+
+" requirements, you must have these enables or this is useless.
+if(  !has('cscope') || !has('modify_fname') )
+  finish
+endif
 
 let s:save_cpo = &cpo
 set cpo&vim
@@ -22,18 +27,11 @@ endif
 " windowdir
 "  Gets the directory for the file in the current window
 "  Or the current working dir if there isn't one for the window.
-"  FIXME This still doesn't always work.  If you open a buffer with 
-"        gvim dir/file.c it ony gets `dir' and not the stuff before...
 function s:windowdir()
   if winbufnr(0) == -1
     return getcwd()
   endif
-  let wndr = bufname(winbufnr(0))
-  let fr = match(wndr, "/[^/]*$")
-  if fr == -1
-    return getcwd()
-  endif
-  return strpart(wndr, 0, fr)
+  return fnamemodify(bufname(winbufnr(0)), ':p:h')
 endfunc
 "
 "==
@@ -146,7 +144,6 @@ endfunc
 " Cycle_csdb
 "  cycle the loaded csccope db.
 function s:Cycle_csdb()
-  if has("cscope")
     if exists("b:csdbpath")
       if cscope_connection(3, "out", b:csdbpath)
         return
@@ -169,7 +166,6 @@ function s:Cycle_csdb()
     else " No cscope database, undo things. (someone rm-ed it or somesuch)
       call s:Unload_csdb()
     endif
-  endif
 endfunc
 
 " auto toggle the menu
