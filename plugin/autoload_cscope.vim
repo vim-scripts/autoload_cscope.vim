@@ -1,6 +1,7 @@
 " Vim global plugin for autoloading cscope databases.
 " Last Change: Fri Nov 30 17:03:47 CST 2001
 " Maintainer: Michael Conrad Tilsra <tadpol@tadpol.org>
+" Revision: 0.2
 
 if exists("loaded_autoload_cscope")
 	finish
@@ -21,6 +22,8 @@ endif
 " windowdir
 "  Gets the directory for the file in the current window
 "  Or the current working dir if there isn't one for the window.
+"  FIXME This still doesn't always work.  If you open a buffer with 
+"        gvim dir/file.c it ony gets `dir' and not the stuff before...
 function s:windowdir()
   if winbufnr(0) == -1
     return getcwd()
@@ -60,7 +63,8 @@ endfunc
 "==
 " Cycle_macros_menus
 "  if there are cscope connections, activate that stuff.
-"  Else toos it out.
+"  Else toss it out.
+"  TODO Maybe I should move this into a seperate plugin?
 let s:menus_loaded = 0
 function s:Cycle_macros_menus()
   if g:autocscope_menus != 1
@@ -73,30 +77,30 @@ function s:Cycle_macros_menus()
     let s:menus_loaded = 1
     set csto=0
     set cst
-    silent! map <unique> <C-]>s :cs find c <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-]>g :cs find g <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-]>d :cs find d <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-]>c :cs find c <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-]>t :cs find t <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-]>e :cs find e <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-]>f :cs find f <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-]>i :cs find i <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-\>s :cs find c <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-\>t :cs find t <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-\>e :cs find e <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-\>f :cs find f <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-\>i :cs find i <C-R>=expand("<cword>")<CR><CR>
     if has("menu")
-      nmenu &Cscope.Find.Symbol<Tab><c-]>s
+      nmenu &Cscope.Find.Symbol<Tab><c-\>s
         \ :cs find s <C-R>=expand("<cword>")<CR><CR>
-      nmenu &Cscope.Find.Definition<Tab><c-]>g
+      nmenu &Cscope.Find.Definition<Tab><c-\>g
         \ :cs find g <C-R>=expand("<cword>")<CR><CR>
-      nmenu &Cscope.Find.Called<Tab><c-]>d
+      nmenu &Cscope.Find.Called<Tab><c-\>d
         \ :cs find d <C-R>=expand("<cword>")<CR><CR>
-      nmenu &Cscope.Find.Calling<Tab><c-]>c
+      nmenu &Cscope.Find.Calling<Tab><c-\>c
         \ :cs find c <C-R>=expand("<cword>")<CR><CR>
-      nmenu &Cscope.Find.Assignment<Tab><c-]>t
+      nmenu &Cscope.Find.Assignment<Tab><c-\>t
         \ :cs find t <C-R>=expand("<cword>")<CR><CR>
-      nmenu &Cscope.Find.Egrep<Tab><c-]>e
+      nmenu &Cscope.Find.Egrep<Tab><c-\>e
         \ :cs find e <C-R>=expand("<cword>")<CR><CR>
-      nmenu &Cscope.Find.File<Tab><c-]>f
+      nmenu &Cscope.Find.File<Tab><c-\>f
         \ :cs find f <C-R>=expand("<cword>")<CR><CR>
-      nmenu &Cscope.Find.Including<Tab><c-]>i
+      nmenu &Cscope.Find.Including<Tab><c-\>i
         \ :cs find i <C-R>=expand("<cword>")<CR><CR>
 "      nmenu &Cscope.Add :cs add 
 "      nmenu &Cscope.Remove  :cs kill 
@@ -109,14 +113,14 @@ function s:Cycle_macros_menus()
   else
     let s:menus_loaded = 0
     set nocst
-    silent! unmap <C-]>s
-    silent! unmap <C-]>g
-    silent! unmap <C-]>d
-    silent! unmap <C-]>c
-    silent! unmap <C-]>t
-    silent! unmap <C-]>e
-    silent! unmap <C-]>f
-    silent! unmap <C-]>i
+    silent! unmap <C-\>s
+    silent! unmap <C-\>g
+    silent! unmap <C-\>d
+    silent! unmap <C-\>c
+    silent! unmap <C-\>t
+    silent! unmap <C-\>e
+    silent! unmap <C-\>f
+    silent! unmap <C-\>i
     if has("menu")  " would rather see if the menu exists, then remove...
       silent! nunmenu Cscope
     endif
@@ -143,9 +147,17 @@ endfunc
 "  cycle the loaded csccope db.
 function s:Cycle_csdb()
   if has("cscope")
-    let b:csdbpath = s:Find_in_parent("cscope.out",s:windowdir(),$HOME)
-"    echo "Found cscope.out at: " . b:csdbpath
-    if b:csdbpath != "Nothing"
+    if exists("b:csdbpath")
+      if cscope_connection(3, "out", b:csdbpath)
+        return
+        "it is already loaded. don't try to reload it.
+      endif
+    endif
+    let newcsdbpath = s:Find_in_parent("cscope.out",s:windowdir(),$HOME)
+"    echo "Found cscope.out at: " . newcsdbpath
+"    echo "Windowdir: " . s:windowdir()
+    if newcsdbpath != "Nothing"
+      let b:csdbpath = newcsdbpath
       if !cscope_connection(3, "out", b:csdbpath)
         let save_csvb = &csverb
         set nocsverb
@@ -154,14 +166,8 @@ function s:Cycle_csdb()
         let &csverb = save_csvb
       endif
       "
-    else " No cscope database, undo things.
-      if cscope_connection(3, "out", b:csdbpath)  " there is something to kill
-        let save_csvb = &csverb
-        set nocsverb
-        exe "cs kill " . b:csdbpath
-        set csverb
-        let &csverb = save_csvb
-      endif
+    else " No cscope database, undo things. (someone rm-ed it or somesuch)
+      call s:Unload_csdb()
     endif
   endif
 endfunc
