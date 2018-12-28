@@ -1,7 +1,41 @@
 " Vim global plugin for autoloading cscope databases.
+" Save this file as ~/.vim/plugin/autoload_cscope.vim present
+" so you can invoke vim in subdirectories and still get cscope.out loaded.
 " Last Change: Wed Jan 26 10:28:52 Jerusalem Standard Time 2011
 " Maintainer: Michael Conrad Tadpol Tilsra <tadpol@tadpol.org>
-" Revision: 0.5
+" Revision: 0.5 (plus the below)
+" With additions from ckelau & ufengzh for .cpp suffix files
+" With additions from Code-Monky & ckelau for .java suffix files
+" See pull requests at https://github.com/vim-scripts/autoload_cscope.vim
+" With additions from Jason Duell's cscope settings by Dan Nygren
+" With additions for .hpp suffix files by Dan Nygren
+
+
+""""""""""""" Jason Duell's cscope/vim key mappings
+" (From http://cscope.sourceforge.net/cscope_maps.vim with light edits. )
+" The following maps all invoke one of the following cscope search types:
+"
+"   's'   symbol: find all references to the token under cursor
+"   'g'   global: find global definition(s) of the token under cursor
+"   'c'   calls:  find all calls to the function name under cursor
+"   't'   text:   find all instances of the text under cursor
+"   'e'   egrep:  egrep search for the word under cursor
+"   'f'   file:   open the filename under cursor
+"   'i'   includes: find files that include the filename under cursor
+"   'd'   called: find functions that function under cursor calls
+"
+" Below are the maps: one set that just jumps to your search result, and one
+" that splits the existing vim window horizontally and displays your search
+" result in the new window.
+"
+" I've used CTRL-\ and CTRL-_ as the starting keys for these maps, as it's
+" unlikely that you need their default mappings.
+"
+" To do the first type of search, hit 'CTRL-\', followed by one of the
+" cscope search types above (s,g,c,t,e,f,i,d).  The result of your cscope
+" search will be displayed in the current window.  You can use CTRL-T to
+" go back to where you were before the search.
+"
 
 if exists("loaded_autoload_cscope")
 	finish
@@ -65,7 +99,7 @@ endfunc
 " Cycle_macros_menus
 "  if there are cscope connections, activate that stuff.
 "  Else toss it out.
-"  TODO Maybe I should move this into a seperate plugin?
+"  TODO Maybe I should move this into a separate plugin?
 let s:menus_loaded = 0
 function s:Cycle_macros_menus()
   if g:autocscope_menus != 1
@@ -80,12 +114,27 @@ function s:Cycle_macros_menus()
     set cst
     silent! map <unique> <C-\>s :cs find s <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>
+" cscope's global function definition search does not work with
+" '__attribute__((unused))' in function definitions because cscope
+" cannot tolerate arbitrary use of () characters in the argument list.
+" (Dan Nygren)
     silent! map <unique> <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>t :cs find t <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>e :cs find e <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>f :cs find f <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>i :cs find i <C-R>=expand("<cword>")<CR><CR>
+" Addition from Jason Duell's cscope settings (Dan Nygren)
+" Split screen horizontally with CTRL underscore
+    silent! map <unique> <C-_>s :scs find s <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_>g :scs find g <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_>c :scs find c <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_>t :scs find t <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_>e :scs find e <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_>f :scs find f <C-R>=expand("<cfile>")<CR><CR>
+    silent! map <unique> <C-_>i :scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+    silent! map <unique> <C-_>d :scs find d <C-R>=expand("<cword>")<CR><CR>
+" End Split screen horizontally
     if has("menu")
       nmenu &Cscope.Find.Symbol<Tab><c-\\>s
         \ :cs find s <C-R>=expand("<cword>")<CR><CR>
@@ -171,14 +220,53 @@ function s:Cycle_csdb()
     endif
 endfunc
 
+" By default, cscope examines C (.c & .h), lex (.l), and yacc (.y) source files.
+" Additions made for C++ source files (.cc, .cpp, .hpp).
+" Additions made for Java source files (.java).
 " auto toggle the menu
 augroup autoload_cscope
  au!
  au BufEnter *.[chly]  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
  au BufEnter *.cc      call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
+ au BufEnter *.[ch]pp  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
+ au BufEnter *.java  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
  au BufUnload *.[chly] call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()
  au BufUnload *.cc     call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()
+ au BufUnload *.[ch]pp  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
+ au BufUnload *.java  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
 augroup END
 
 let &cpo = s:save_cpo
 
+" Addition from Jason Duell's cscope settings
+"    """"""""""""" key map timeouts
+"    "
+"    " By default Vim will only wait 1 second for each keystroke in a mapping.
+"    " You may find that too short with the above typemaps.  If so, you should
+"    " either turn off mapping timeouts via 'notimeout'.
+"    "
+"    "set notimeout
+"    "
+"    " Or, you can keep timeouts, by uncommenting the timeoutlen line below,
+"    " with your own personal favorite value (in milliseconds):
+"    "
+"    "set timeoutlen=4000
+set timeoutlen=2000
+"    "
+"    " Either way, since mapping timeout settings by default also set the
+"    " timeouts for multicharacter 'keys codes' (like <F1>), you should also
+"    " set ttimeout and ttimeoutlen: otherwise, you will experience strange
+"    " delays as vim waits for a keystroke after you hit ESC (it will be
+"    " waiting to see if the ESC is actually part of a key code like <F1>).
+"    "
+"    "set ttimeout
+set ttimeout
+"    "
+"    " personally, I find a tenth of a second to work well for key code
+"    " timeouts. If you experience problems and have a slow terminal or network
+"    " connection, set it higher.  If you don't set ttimeoutlen, the value for
+"    " timeoutlent (default: 1000 = 1 second, which is sluggish) is used.
+"    "
+"    "set ttimeoutlen=100
+set ttimeoutlen=100
+"
