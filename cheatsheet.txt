@@ -1,0 +1,26 @@
+"""""""""""""" Jason Duell's Cscope/Vim Key Mappings Cheat Sheet """""""""""""""
+" (From http://cscope.sourceforge.net/cscope_maps.vim with light edits. )
+" The following maps all invoke one of the following Cscope search types:
+"
+"   's'   symbol:   find all references to the token under cursor
+"   'g'   global:   find global definition(s) of the token under cursor
+"   'c'   calls:    find all calls to the function name under cursor
+"   't'   text:     find all instances of the text under cursor
+"   'e'   egrep:    egrep search for the word under cursor
+"   'f'   file:     open the filename under cursor
+"   'i'   includes: find files that include the filename under cursor
+"   'd'   called:   find functions that function under cursor calls
+"
+" Below are the maps: one set that just jumps to your search result, one
+" that splits the existing vim window horizontally and displays your search
+" result in the new window, and one that does the same thing except vertically.
+"
+" CTRL-\ (Control Backslash) and for the splits CTRL-_ (Control Underscore,
+" i.e. CTRL-Shift-Dash) are the starting keys for these maps.
+"
+" To do the first type of search, hit 'CTRL-\', followed by one of the Cscope
+" search types above (s,g,c,t,e,f,i,d). You can use CTRL-t to go back to where
+" you were before the search. The second and third types of search use CTRL-_
+" and CTRL-_ twice respectively. The result of your Cscope search will be
+" displayed in the current window.
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

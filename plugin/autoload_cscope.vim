@@ -1,61 +1,124 @@
-" Vim global plugin for autoloading cscope databases.
-" Save this file as ~/.vim/plugin/autoload_cscope.vim present
-" so you can invoke vim in subdirectories and still get cscope.out loaded.
-" Last Change: Wed Jan 26 10:28:52 Jerusalem Standard Time 2011
-" Maintainer: Michael Conrad Tadpol Tilsra <tadpol@tadpol.org>
-" Revision: 0.5 (plus the below)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" autoload_cscope.vim: Vim global plugin for autoloading Cscope databases
+"
+" Based on revision: 0.5 of autoload_cscope.vim by Michael Conrad Tadpol Tilsra
+" https://www.vim.org/scripts/script.php?script_id=157
+" With additions from Jason Duell's cscope_macros.vim 2.0.0
+" https://www.vim.org/scripts/script.php?script_id=51
+" http://cscope.sourceforge.net/cscope_maps.vim
 " With additions from ckelau & ufengzh for .cpp suffix files
 " With additions from Code-Monky & ckelau for .java suffix files
-" See pull requests at https://github.com/vim-scripts/autoload_cscope.vim
-" With additions from Jason Duell's cscope settings by Dan Nygren
 " With additions for .hpp suffix files by Dan Nygren
+" With additions for Python and Go by xin3liang
+" See pull requests at https://github.com/vim-scripts/autoload_cscope.vim
+" With additions for automatically updating cscope database after saves by Flynn
+" https://vim.fandom.com/wiki/Script:157
+" CC BY-SA license
+"
+" Combined by: Dan Nygren
+" Email: nygren@msss.com
+" Permanent Email: dan.nygren@gmail.com
+" Copyright (c) 2022 Dan Nygren.
+" BSD 0-clause license, "Zero Clause BSD", SPDX: 0BSD
+"
+"   Save this file as ~/.vim/plugin/autoload_cscope.vim so you can invoke
+" vim/gvim in subdirectories and still get cscope.out loaded. It performs a
+" search starting at the directory that the edited file is in, checking the
+" parent directories until it finds the cscope.out file. Therefore you can
+" start editing a file deep in a project directory, and it will find the
+" correct Cscope database.
+"   A prerequisite for use is that a Cscope database has been generated. Cscope
+" can be executed on the command line, or a script like cscope_db_gen can be
+" used to generate the database. See https://github.com/dnygren/cscope_db_gen
+" for an example of how to generate a Cscope database for C/C++.
+"   This plugin also adds a Cscope selection to gvim's menu bar.
+"
+" CALL SEQUENCE  Place in  ~/.vim/plugin directory to call
+"
+" EXAMPLES       N/A
+"
+" TARGET SYSTEM  Unix vim / gvim
+"
+" DEVELOPED ON   Linux
+"
+" CALLS          cscope, cscope_db_gen
+"
+" CALLED BY      vim / gvim
+"
+" INPUTS         autocscope_auto_update, loaded_autoload_cscope
+"
+" OUTPUTS        (Parameters modified, include global/static data)
+"
+" RETURNS        (Type and meaning of return value, if any)
+"
+" ERROR HANDLING (Describe how errors are handled)
+"
+" SECURE CODING  (List methods used to prevent exploits against this code)
+"
+" WARNINGS       1) A Cscope database must exist in a parent directory.
+"                2) Cscope's global function definition search does not work
+"                with '__attribute__((unused))' in function definitions because
+"                Cscope cannot tolerate arbitrary use of () characters in the
+"                argument list.
+"                (N. Describe anything a maintainer should be aware of)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-
-""""""""""""" Jason Duell's cscope/vim key mappings
+"""""""""""""" Jason Duell's Cscope/Vim Key Mappings Cheat Sheet """""""""""""""
 " (From http://cscope.sourceforge.net/cscope_maps.vim with light edits. )
-" The following maps all invoke one of the following cscope search types:
+" The following maps all invoke one of the following Cscope search types:
 "
-"   's'   symbol: find all references to the token under cursor
-"   'g'   global: find global definition(s) of the token under cursor
-"   'c'   calls:  find all calls to the function name under cursor
-"   't'   text:   find all instances of the text under cursor
-"   'e'   egrep:  egrep search for the word under cursor
-"   'f'   file:   open the filename under cursor
+"   's'   symbol:   find all references to the token under cursor
+"   'g'   global:   find global definition(s) of the token under cursor
+"   'c'   calls:    find all calls to the function name under cursor
+"   't'   text:     find all instances of the text under cursor
+"   'e'   egrep:    egrep search for the word under cursor
+"   'f'   file:     open the filename under cursor
 "   'i'   includes: find files that include the filename under cursor
-"   'd'   called: find functions that function under cursor calls
+"   'd'   called:   find functions that function under cursor calls
 "
-" Below are the maps: one set that just jumps to your search result, and one
+" Below are the maps: one set that just jumps to your search result, one
 " that splits the existing vim window horizontally and displays your search
-" result in the new window.
+" result in the new window, and one that does the same thing except vertically.
 "
-" I've used CTRL-\ and CTRL-_ as the starting keys for these maps, as it's
-" unlikely that you need their default mappings.
+" CTRL-\ (Control Backslash) and for the splits CTRL-_ (Control Underscore,
+" i.e. CTRL-Shift-Dash) are the starting keys for these maps.
 "
-" To do the first type of search, hit 'CTRL-\', followed by one of the
-" cscope search types above (s,g,c,t,e,f,i,d).  The result of your cscope
-" search will be displayed in the current window.  You can use CTRL-T to
-" go back to where you were before the search.
-"
+" To do the first type of search, hit 'CTRL-\', followed by one of the Cscope
+" search types above (s,g,c,t,e,f,i,d). You can use CTRL-t to go back to where
+" you were before the search. The second and third types of search use CTRL-_
+" and CTRL-_ twice respectively. The result of your Cscope search will be
+" displayed in the current window.
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+" If this script is already loaded, skip loading the script again.
 if exists("loaded_autoload_cscope")
-	finish
+    finish
 endif
 let loaded_autoload_cscope = 1
 
-" requirements, you must have these enabled or this is useless.
+" If set to 1, it will auto update your cscope/gtags database and reset the
+" Cscope connection when a file is saved.
+if !exists("g:autocscope_auto_update")
+  let g:autocscope_auto_update = 1
+endif
+
+" If set to 1, the menu and macros will be loaded. Set value something other
+" than 1 if they are not wanted.
+if !exists("g:autocscope_menus")
+  let g:autocscope_menus = 1
+endif
+
+" ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+" ^^^^^^^^^^ Place code that may need modification above this point. ^^^^^^^^^^
+" ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+" Vim must have these enabled or this plugin is useless.
 if(  !has('cscope') || !has('modify_fname') )
   finish
 endif
 
 let s:save_cpo = &cpo
 set cpo&vim
-
-" If you set this to anything other than 1, the menu and macros will not be
-" loaded.  Useful if you have your own that you like.  Or don't want my stuff
-" clashing with any macros you've made.
-if !exists("g:autocscope_menus")
-  let g:autocscope_menus = 1
-endif
 
 "==
 " windowdir
@@ -65,7 +128,7 @@ endif
 function s:windowdir()
   if winbufnr(0) == -1
     let unislash = getcwd()
-  else 
+  else
     let unislash = fnamemodify(bufname(winbufnr(0)), ':p:h')
   endif
     return tr(unislash, '\', '/')
@@ -97,7 +160,7 @@ endfunc
 "
 "==
 " Cycle_macros_menus
-"  if there are cscope connections, activate that stuff.
+"  if there are Cscope connections, activate that stuff.
 "  Else toss it out.
 "  TODO Maybe I should move this into a separate plugin?
 let s:menus_loaded = 0
@@ -112,29 +175,35 @@ function s:Cycle_macros_menus()
     let s:menus_loaded = 1
     set csto=0
     set cst
+" Update the cheat sheet if the mappings are changed.
     silent! map <unique> <C-\>s :cs find s <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>
-" cscope's global function definition search does not work with
-" '__attribute__((unused))' in function definitions because cscope
-" cannot tolerate arbitrary use of () characters in the argument list.
-" (Dan Nygren)
     silent! map <unique> <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>t :cs find t <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>e :cs find e <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-\>f :cs find f <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-\>i :cs find i <C-R>=expand("<cword>")<CR><CR>
-" Addition from Jason Duell's cscope settings (Dan Nygren)
-" Split screen horizontally with CTRL underscore
+    silent! map <unique> <C-\>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
+    silent! map <unique> <C-\>i :cs find i <C-R>=expand("<cfile>")<CR><CR>
+" Split screen horizontally with CTRL underscore (CTRL-Shift-Dash)
     silent! map <unique> <C-_>s :scs find s <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-_>g :scs find g <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-_>c :scs find c <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-_>t :scs find t <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-_>e :scs find e <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-_>f :scs find f <C-R>=expand("<cfile>")<CR><CR>
-    silent! map <unique> <C-_>i :scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+    silent! map <unique> <C-_>i :scs find i <C-R>=expand("<cfile>")<CR><CR>
     silent! map <unique> <C-_>d :scs find d <C-R>=expand("<cword>")<CR><CR>
 " End Split screen horizontally
+" Split screen vertically with CTRL underscore twice (CTRL-Shift-Dash twice)
+    silent! map <unique> <C-_><C-_>s :vert scs find s <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>g :vert scs find g <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>c :vert scs find c <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>t :vert scs find t <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>e :vert scs find e <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>f :vert scs find f <C-R>=expand("<cfile>")<CR><CR>
+    silent! map <unique> <C-_><C-_>i :vert scs find i <C-R>=expand("<cfile>")<CR><CR>
+    silent! map <unique> <C-_><C-_>d :vert scs find d <C-R>=expand("<cword>")<CR><CR>
+" End Split screen vertically
     if has("menu")
       nmenu &Cscope.Find.Symbol<Tab><c-\\>s
         \ :cs find s <C-R>=expand("<cword>")<CR><CR>
@@ -149,11 +218,11 @@ function s:Cycle_macros_menus()
       nmenu &Cscope.Find.Egrep<Tab><c-\\>e
         \ :cs find e <C-R>=expand("<cword>")<CR><CR>
       nmenu &Cscope.Find.File<Tab><c-\\>f
-        \ :cs find f <C-R>=expand("<cword>")<CR><CR>
+        \ :cs find f <C-R>=expand("<cfile>")<CR><CR>
       nmenu &Cscope.Find.Including<Tab><c-\\>i
-        \ :cs find i <C-R>=expand("<cword>")<CR><CR>
-"      nmenu &Cscope.Add :cs add 
-"      nmenu &Cscope.Remove  :cs kill 
+        \ :cs find i <C-R>=expand("<cfile>")<CR><CR>
+"      nmenu &Cscope.Add :cs add
+"      nmenu &Cscope.Remove  :cs kill
       nmenu &Cscope.Reset :cs reset<cr>
       nmenu &Cscope.Show :cs show<cr>
       " Need to figure out how to do the add/remove. May end up writing
@@ -179,7 +248,7 @@ endfunc
 "
 "==
 " Unload_csdb
-"  drop cscope connections.
+"  drop Cscope connections.
 function s:Unload_csdb()
   if exists("b:csdbpath")
     if cscope_connection(3, "out", b:csdbpath)
@@ -194,7 +263,7 @@ endfunc
 "
 "==
 " Cycle_csdb
-"  cycle the loaded cscope db.
+"  cycle the loaded Cscope db.
 function s:Cycle_csdb()
     if exists("b:csdbpath")
       if cscope_connection(3, "out", b:csdbpath)
@@ -215,12 +284,54 @@ function s:Cycle_csdb()
         let &csverb = save_csvb
       endif
       "
-    else " No cscope database, undo things. (someone rm-ed it or somesuch)
+    else " No Cscope database, undo things. (someone rm-ed it or ...?)
       call s:Unload_csdb()
     endif
 endfunc
 
-" By default, cscope examines C (.c & .h), lex (.l), and yacc (.y) source files.
+" If enabled, auto update your cscope/gtags database and reset the Cscope
+" connection when a file is saved.
+function s:Update_csdb()
+    if g:autocscope_auto_update != 1
+      return
+    endif
+
+    if exists("b:csdbpath")
+      if cscope_connection(3, g:autocscope_tagfile_name, b:csdbpath)
+          if g:autocscope_use_gtags == 1
+              "exe "silent !cd " . b:csdbpath . " && global -u &"
+              exe "silent !cd " . b:csdbpath . " && global -u"
+" Cscope only examines C (.c & .h), lex (.l), and yacc (.y) source files.
+"          else
+"              "exe "silent !cd " . b:csdbpath . " && cscope -Rbq &"
+"              exe "silent !cd " . b:csdbpath . " && cscope -Rbq"
+" The cscope_db_gen script allows other source files to be examined by Cscope.
+          else
+              "exe "silent !cd " . b:csdbpath . " && cscope_db_gen &"
+              exe "silent !cd " . b:csdbpath . " && cscope_db_gen"
+          endif
+
+          set nocsverb
+          exe "cs reset"
+          set csverb
+      endif
+  endif
+endfunc
+
+" If you set this to 1, it will use gtags-cscope which is faster than cscope.
+if !exists("g:autocscope_use_gtags")
+  let g:autocscope_use_gtags = 0
+endif
+
+if g:autocscope_use_gtags == 1
+    let g:autocscope_tagfile_name = "GTAGS"
+    set cscopeprg=gtags-cscope
+else
+    let g:autocscope_tagfile_name = "cscope.out"
+    set cscopeprg=cscope
+endif
+
+" By default, Cscope examines C (.c & .h), lex (.l), and yacc (.y) source files.
 " Additions made for C++ source files (.cc, .cpp, .hpp).
 " Additions made for Java source files (.java).
 " auto toggle the menu
@@ -229,16 +340,27 @@ augroup autoload_cscope
  au BufEnter *.[chly]  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
  au BufEnter *.cc      call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
  au BufEnter *.[ch]pp  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
- au BufEnter *.java  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
+ au BufEnter *.java    call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
+ au BufEnter *.py      call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
+ au BufEnter *.go      call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
+"
+ au BufWritePost *.[chly] call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
+ au BufWritePost *.cc     call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
+ au BufWritePost *.[ch]pp call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
+ au BufWritePost *.java   call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
+ au BufWritePost *.py     call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
+ au BufWritePost *.go     call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
+"
  au BufUnload *.[chly] call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()
  au BufUnload *.cc     call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()
- au BufUnload *.[ch]pp  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
- au BufUnload *.java  call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
+ au BufUnload *.[ch]pp call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()
+ au BufUnload *.java   call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()
+ au BufUnload *.py     call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()
+ au BufUnload *.go     call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()
 augroup END
 
 let &cpo = s:save_cpo
 
-" Addition from Jason Duell's cscope settings
 "    """"""""""""" key map timeouts
 "    "
 "    " By default Vim will only wait 1 second for each keystroke in a mapping.
@@ -251,7 +373,7 @@ let &cpo = s:save_cpo
 "    " with your own personal favorite value (in milliseconds):
 "    "
 "    "set timeoutlen=4000
-set timeoutlen=2000
+set timeoutlen=3000
 "    "
 "    " Either way, since mapping timeout settings by default also set the
 "    " timeouts for multicharacter 'keys codes' (like <F1>), you should also
