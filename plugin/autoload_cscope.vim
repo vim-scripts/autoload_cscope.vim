@@ -76,16 +76,14 @@
 "   'i'   includes: find files that include the filename under cursor
 "   'd'   called:   find functions that function under cursor calls
 "
-" Below are the maps: one set that just jumps to your search result, one
-" that splits the existing vim window horizontally and displays your search
-" result in the new window, and one that does the same thing except vertically.
-"
-" CTRL-\ (Control Backslash) and for the splits CTRL-_ (Control Underscore,
-" i.e. CTRL-Shift-Dash) are the starting keys for these maps.
+" The starting keys for the searches are:
+" CTRL-\ (Control Backslash) which just jumps to your search result,
+" CTRL-_ (Control Underscore, i.e. CTRL-Shift-Dash) splits the Vim window,
+" CTRL-_CTRL-_ (Control Underscore twice) splits the Vim window vertically.
 "
 " To do the first type of search, hit 'CTRL-\', followed by one of the Cscope
-" search types above (s,g,c,t,e,f,i,d). You can use CTRL-t to go back to where
-" you were before the search. The second and third types of search use CTRL-_
+" search types above (s,g,c,t,e,f,i,d). Use CTRL-t to go back to where the
+" searching began. The second and third types of search use CTRL-_ and then
 " and CTRL-_ twice respectively. The result of your Cscope search will be
 " displayed in the current window.
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -96,7 +94,17 @@ if exists("loaded_autoload_cscope")
 endif
 let loaded_autoload_cscope = 1
 
-" If set to 1, it will auto update your cscope/gtags database and reset the
+" The default Cscope path component (cspc) value of "0" displays the entire
+" path, which usually doesn't fit the screen and so gets be abbreviated to just
+" the starting path (usually useless) and the ending path (most already known).
+" The below construct sets cspc to a more reasonable value if cscp hasn't been
+" changed from the default in the user's .vimrc file.
+"
+if &cspc == "0"
+    set cspc=4
+endif
+
+" If set to 1, auto update your cscope/gtags database and reset the
 " Cscope connection when a file is saved.
 if !exists("g:autocscope_auto_update")
   let g:autocscope_auto_update = 1
@@ -108,12 +116,18 @@ if !exists("g:autocscope_menus")
   let g:autocscope_menus = 1
 endif
 
+" If set to 1, use gtags-cscope which is faster than cscope.
+if !exists("g:autocscope_use_gtags")
+  let g:autocscope_use_gtags = 0
+endif
+
+
 " ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 " ^^^^^^^^^^ Place code that may need modification above this point. ^^^^^^^^^^
 " ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 " Vim must have these enabled or this plugin is useless.
-if(  !has('cscope') || !has('modify_fname') )
+if( !has('cscope') || !has('modify_fname') )
   finish
 endif
 
@@ -195,16 +209,26 @@ function s:Cycle_macros_menus()
     silent! map <unique> <C-_>d :scs find d <C-R>=expand("<cword>")<CR><CR>
 " End Split screen horizontally
 " Split screen vertically with CTRL underscore twice (CTRL-Shift-Dash twice)
-    silent! map <unique> <C-_><C-_>s :vert scs find s <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>g :vert scs find g <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>c :vert scs find c <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>t :vert scs find t <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>e :vert scs find e <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>f :vert scs find f <C-R>=expand("<cfile>")<CR><CR>
-    silent! map <unique> <C-_><C-_>i :vert scs find i <C-R>=expand("<cfile>")<CR><CR>
-    silent! map <unique> <C-_><C-_>d :vert scs find d <C-R>=expand("<cword>")<CR><CR>
+" Line continuation. See :help line-continuation
+    silent! map <unique> <C-_><C-_>s
+        \    :vert scs find s <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>g
+        \    :vert scs find g <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>c
+        \    :vert scs find c <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>t
+        \    :vert scs find t <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>e
+        \    :vert scs find e <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-_><C-_>f
+        \    :vert scs find f <C-R>=expand("<cfile>")<CR><CR>
+    silent! map <unique> <C-_><C-_>i
+        \    :vert scs find i <C-R>=expand("<cfile>")<CR><CR>
+    silent! map <unique> <C-_><C-_>d
+        \    :vert scs find d <C-R>=expand("<cword>")<CR><CR>
 " End Split screen vertically
     if has("menu")
+" Line continuation. See :help line-continuation
       nmenu &Cscope.Find.Symbol<Tab><c-\\>s
         \ :cs find s <C-R>=expand("<cword>")<CR><CR>
       nmenu &Cscope.Find.Definition<Tab><c-\\>g
@@ -299,16 +323,21 @@ function s:Update_csdb()
     if exists("b:csdbpath")
       if cscope_connection(3, g:autocscope_tagfile_name, b:csdbpath)
           if g:autocscope_use_gtags == 1
-              "exe "silent !cd " . b:csdbpath . " && global -u &"
+              "exe "silent !cd " . b:csdbpath . " && global -u"
               exe "silent !cd " . b:csdbpath . " && global -u"
 " Cscope only examines C (.c & .h), lex (.l), and yacc (.y) source files.
 "          else
-"              "exe "silent !cd " . b:csdbpath . " && cscope -Rbq &"
+"              "exe "silent !cd " . b:csdbpath . " && cscope -Rbq"
 "              exe "silent !cd " . b:csdbpath . " && cscope -Rbq"
-" The cscope_db_gen script allows other source files to be examined by Cscope.
+"
+" The cscope_db_gen script allows source files other than the Cscope defaults
+" to be examined by Cscope (C++ files etc.). When called with the -q "quick"
+" flag, cscope_db_gen uses the existing cscope.files list of files. So if new
+" files are created, cscope_db_gen without flags must be executed in the
+" repository's base directory.
           else
-              "exe "silent !cd " . b:csdbpath . " && cscope_db_gen &"
-              exe "silent !cd " . b:csdbpath . " && cscope_db_gen"
+              "exe "silent !cd " . b:csdbpath . " && cscope_db_gen -q"
+              exe "silent !cd " . b:csdbpath . " && cscope_db_gen -q"
           endif
 
           set nocsverb
@@ -318,11 +347,7 @@ function s:Update_csdb()
   endif
 endfunc
 
-" If you set this to 1, it will use gtags-cscope which is faster than cscope.
-if !exists("g:autocscope_use_gtags")
-  let g:autocscope_use_gtags = 0
-endif
-
+" If set to 1, use gtags-cscope which is faster than cscope.
 if g:autocscope_use_gtags == 1
     let g:autocscope_tagfile_name = "GTAGS"
     set cscopeprg=gtags-cscope
@@ -343,13 +368,19 @@ augroup autoload_cscope
  au BufEnter *.java    call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
  au BufEnter *.py      call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
  au BufEnter *.go      call <SID>Cycle_csdb() | call <SID>Cycle_macros_menus()
-"
- au BufWritePost *.[chly] call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
- au BufWritePost *.cc     call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
- au BufWritePost *.[ch]pp call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
- au BufWritePost *.java   call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
- au BufWritePost *.py     call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
- au BufWritePost *.go     call <SID>Update_csdb() | call <SID>Cycle_macros_menus()
+" Line continuation. See :help line-continuation
+ au BufWritePost *.[chly] call <SID>Update_csdb() | call
+    \ <SID>Cycle_macros_menus()
+ au BufWritePost *.cc     call <SID>Update_csdb() | call
+    \ <SID>Cycle_macros_menus()
+ au BufWritePost *.[ch]pp call <SID>Update_csdb() | call
+    \ <SID>Cycle_macros_menus()
+ au BufWritePost *.java   call <SID>Update_csdb() | call
+    \ <SID>Cycle_macros_menus()
+ au BufWritePost *.py     call <SID>Update_csdb() | call
+    \ <SID>Cycle_macros_menus()
+ au BufWritePost *.go     call <SID>Update_csdb() | call
+    \ <SID>Cycle_macros_menus()
 "
  au BufUnload *.[chly] call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()
  au BufUnload *.cc     call <SID>Unload_csdb() | call <SID>Cycle_macros_menus()

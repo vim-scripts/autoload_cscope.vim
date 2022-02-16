@@ -11,16 +11,14 @@
 "   'i'   includes: find files that include the filename under cursor
 "   'd'   called:   find functions that function under cursor calls
 "
-" Below are the maps: one set that just jumps to your search result, one
-" that splits the existing vim window horizontally and displays your search
-" result in the new window, and one that does the same thing except vertically.
-"
-" CTRL-\ (Control Backslash) and for the splits CTRL-_ (Control Underscore,
-" i.e. CTRL-Shift-Dash) are the starting keys for these maps.
+" The starting keys for the searches are:
+" CTRL-\ (Control Backslash) which just jumps to your search result,
+" CTRL-_ (Control Underscore, i.e. CTRL-Shift-Dash) splits the Vim window,
+" CTRL-_CTRL-_ (Control Underscore twice) splits the Vim window vertically.
 "
 " To do the first type of search, hit 'CTRL-\', followed by one of the Cscope
-" search types above (s,g,c,t,e,f,i,d). You can use CTRL-t to go back to where
-" you were before the search. The second and third types of search use CTRL-_
+" search types above (s,g,c,t,e,f,i,d). Use CTRL-t to go back to where the
+" searching began. The second and third types of search use CTRL-_ and then
 " and CTRL-_ twice respectively. The result of your Cscope search will be
 " displayed in the current window.
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
