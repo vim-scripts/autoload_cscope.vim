@@ -64,28 +64,28 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 """""""""""""" Jason Duell's Cscope/Vim Key Mappings Cheat Sheet """""""""""""""
-" (From http://cscope.sourceforge.net/cscope_maps.vim with light edits. )
+" (Based on http://cscope.sourceforge.net/cscope_maps.vim with light edits.)
 " The following maps all invoke one of the following Cscope search types:
 "
-"   's'   symbol:   find all references to the token under cursor
-"   'g'   global:   find global definition(s) of the token under cursor
-"   'c'   calls:    find all calls to the function name under cursor
-"   't'   text:     find all instances of the text under cursor
-"   'e'   egrep:    egrep search for the word under cursor
-"   'f'   file:     open the filename under cursor
-"   'i'   includes: find files that include the filename under cursor
-"   'd'   called:   find functions that function under cursor calls
+"   's'   symbol    Find all references to the token under cursor
+"   'g'   global    Find global definition(s) of the token under cursor
+"   'c'   calls     Find all calls to the function name under cursor
+"   'd'   called    Find functions that function under cursor calls
+"   't'   text      Find all instances of the text under cursor
+"   'e'   egrep     Find egrep pattern for the word under cursor
+"   'f'   file      Open the filename under cursor
+"   'i'   includes  Find files that include the filename under cursor
 "
 " The starting keys for the searches are:
-" CTRL-\ (Control Backslash) which just jumps to your search result,
-" CTRL-_ (Control Underscore, i.e. CTRL-Shift-Dash) splits the Vim window,
-" CTRL-_CTRL-_ (Control Underscore twice) splits the Vim window vertically.
+" CTRL-\ (Control Backslash) jumps the whole Vim window to the search result,
+" CTRL-H (Control H) splits the Vim window horizontally to display the result,
+" CTRL-V (Control V) splits the Vim window vertically to display the result.
+" CTRL-T (Control T) jumps back to where the search began.
 "
 " To do the first type of search, hit 'CTRL-\', followed by one of the Cscope
-" search types above (s,g,c,t,e,f,i,d). Use CTRL-t to go back to where the
-" searching began. The second and third types of search use CTRL-_ and then
-" and CTRL-_ twice respectively. The result of your Cscope search will be
-" displayed in the current window.
+" search types above (s,g,c,d,t,e,f,i). Use CTRL-T to go back to where the
+" searching began. The second and third types of search use CTRL-H or CTRL-V
+" to split the window horizontally or vertically to display the search result.
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " If this script is already loaded, skip loading the script again.
@@ -120,7 +120,6 @@ endif
 if !exists("g:autocscope_use_gtags")
   let g:autocscope_use_gtags = 0
 endif
-
 
 " ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 " ^^^^^^^^^^ Place code that may need modification above this point. ^^^^^^^^^^
@@ -192,40 +191,40 @@ function s:Cycle_macros_menus()
 " Update the cheat sheet if the mappings are changed.
     silent! map <unique> <C-\>s :cs find s <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>t :cs find t <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>e :cs find e <C-R>=expand("<cword>")<CR><CR>
     silent! map <unique> <C-\>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
     silent! map <unique> <C-\>i :cs find i <C-R>=expand("<cfile>")<CR><CR>
-" Split screen horizontally with CTRL underscore (CTRL-Shift-Dash)
-    silent! map <unique> <C-_>s :scs find s <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_>g :scs find g <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_>c :scs find c <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_>t :scs find t <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_>e :scs find e <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_>f :scs find f <C-R>=expand("<cfile>")<CR><CR>
-    silent! map <unique> <C-_>i :scs find i <C-R>=expand("<cfile>")<CR><CR>
-    silent! map <unique> <C-_>d :scs find d <C-R>=expand("<cword>")<CR><CR>
+" Split screen horizontally with CTRL h
+    silent! map <unique> <C-h>s :scs find s <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-h>g :scs find g <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-h>c :scs find c <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-h>d :scs find d <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-h>t :scs find t <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-h>e :scs find e <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-h>f :scs find f <C-R>=expand("<cfile>")<CR><CR>
+    silent! map <unique> <C-h>i :scs find i <C-R>=expand("<cfile>")<CR><CR>
 " End Split screen horizontally
-" Split screen vertically with CTRL underscore twice (CTRL-Shift-Dash twice)
+" Split screen vertically with CTRL v
 " Line continuation. See :help line-continuation
-    silent! map <unique> <C-_><C-_>s
+    silent! map <unique> <C-v>s
         \    :vert scs find s <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>g
+    silent! map <unique> <C-v>g
         \    :vert scs find g <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>c
+    silent! map <unique> <C-v>c
         \    :vert scs find c <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>t
-        \    :vert scs find t <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>e
-        \    :vert scs find e <C-R>=expand("<cword>")<CR><CR>
-    silent! map <unique> <C-_><C-_>f
-        \    :vert scs find f <C-R>=expand("<cfile>")<CR><CR>
-    silent! map <unique> <C-_><C-_>i
-        \    :vert scs find i <C-R>=expand("<cfile>")<CR><CR>
-    silent! map <unique> <C-_><C-_>d
+    silent! map <unique> <C-v>d
         \    :vert scs find d <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-v>t
+        \    :vert scs find t <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-v>e
+        \    :vert scs find e <C-R>=expand("<cword>")<CR><CR>
+    silent! map <unique> <C-v>f
+        \    :vert scs find f <C-R>=expand("<cfile>")<CR><CR>
+    silent! map <unique> <C-v>i
+        \    :vert scs find i <C-R>=expand("<cfile>")<CR><CR>
 " End Split screen vertically
     if has("menu")
 " Line continuation. See :help line-continuation
@@ -233,10 +232,10 @@ function s:Cycle_macros_menus()
         \ :cs find s <C-R>=expand("<cword>")<CR><CR>
       nmenu &Cscope.Find.Definition<Tab><c-\\>g
         \ :cs find g <C-R>=expand("<cword>")<CR><CR>
-      nmenu &Cscope.Find.Called<Tab><c-\\>d
-        \ :cs find d <C-R>=expand("<cword>")<CR><CR>
       nmenu &Cscope.Find.Calling<Tab><c-\\>c
         \ :cs find c <C-R>=expand("<cword>")<CR><CR>
+      nmenu &Cscope.Find.Called<Tab><c-\\>d
+        \ :cs find d <C-R>=expand("<cword>")<CR><CR>
       nmenu &Cscope.Find.Assignment<Tab><c-\\>t
         \ :cs find t <C-R>=expand("<cword>")<CR><CR>
       nmenu &Cscope.Find.Egrep<Tab><c-\\>e
@@ -258,8 +257,8 @@ function s:Cycle_macros_menus()
     set nocst
     silent! unmap <C-\>s
     silent! unmap <C-\>g
-    silent! unmap <C-\>d
     silent! unmap <C-\>c
+    silent! unmap <C-\>d
     silent! unmap <C-\>t
     silent! unmap <C-\>e
     silent! unmap <C-\>f
