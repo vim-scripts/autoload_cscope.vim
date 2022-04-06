@@ -1,13 +1,18 @@
 This Vim plugin is based on prior work from a number of authors. See the
 autoload_cscope.vim comment header block for details.
 
-This plugin will automatically load cscope.out databases (created separately)
-into Vim when you open a file.
+This plugin will automatically load a cscope.out database (created manually in
+the base directory of a source code file tree) into Vim when you open a file.
 
 It performs a search starting at the directory that the edited file is in,
 checking the parent directories until it finds the cscope.out file. Therefore
 you can start editing a file deep in a project directory, and it will find the
-correct Cscope database. Keystroke macros and a pull down menu are provided to
-invoke the Cscope functions.
+correct Cscope database.
+
+It will also automatically update the cscope database after file saves. If new
+files are created, the cscope.out database must be recreated manually.
+
+Keystroke macros and a pull down menu are provided to invoke the Cscope
+functions.
 
 A cheatsheet is provided to assist in executing the keystroke macros.

@@ -3,15 +3,16 @@
 "
 " Based on revision: 0.5 of autoload_cscope.vim by Michael Conrad Tadpol Tilsra
 " https://www.vim.org/scripts/script.php?script_id=157
-" With additions from Jason Duell's cscope_macros.vim 2.0.0
+" https://github.com/vim-scripts/autoload_cscope.vim
+" and based on Jason Duell's cscope_macros.vim 2.0.0
 " https://www.vim.org/scripts/script.php?script_id=51
 " http://cscope.sourceforge.net/cscope_maps.vim
-" With additions from ckelau & ufengzh for .cpp suffix files
-" With additions from Code-Monky & ckelau for .java suffix files
-" With additions for .hpp suffix files by Dan Nygren
-" With additions for Python and Go by xin3liang
+" with additions from ckelau & ufengzh for .cpp suffix files
+" with additions from Code-Monky & ckelau for .java suffix files
+" with additions for .hpp suffix files by Dan Nygren
+" with additions for Python and Go by xin3liang
 " See pull requests at https://github.com/vim-scripts/autoload_cscope.vim
-" With additions for automatically updating cscope database after saves by Flynn
+" with additions for automatically updating cscope database after saves by Flynn
 " https://vim.fandom.com/wiki/Script:157
 " CC BY-SA license
 "
@@ -41,7 +42,7 @@
 "
 " DEVELOPED ON   Linux
 "
-" CALLS          cscope, cscope_db_gen
+" CALLS          cscope, cscope_db_gen, global, gtags-cscope
 "
 " CALLED BY      vim / gvim
 "
@@ -56,7 +57,10 @@
 " SECURE CODING  (List methods used to prevent exploits against this code)
 "
 " WARNINGS       1) A Cscope database must exist in a parent directory.
-"                2) Cscope's global function definition search does not work
+"                2) If new files are created, create a new list of files
+"                (e.g. cscope.files) in the repository's base directory by
+"                running cscope_db_gen without flags or a similar command.
+"                3) Cscope's global function definition search does not work
 "                with '__attribute__((unused))' in function definitions because
 "                Cscope cannot tolerate arbitrary use of () characters in the
 "                argument list.
@@ -104,22 +108,62 @@ if &cspc == "0"
     set cspc=4
 endif
 
-" If set to 1, auto update your cscope/gtags database and reset the
-" Cscope connection when a file is saved.
+" If set to 1, auto update your cscope/gtags database and reset the Cscope
+" connection when a file is saved.
+" The default is 1, update the cscope/gtags database and reset the connection.
 if !exists("g:autocscope_auto_update")
   let g:autocscope_auto_update = 1
 endif
 
-" If set to 1, the menu and macros will be loaded. Set value something other
-" than 1 if they are not wanted.
+" If set to 1, the menu and macros will be loaded.
+" The default is 1, use menus. Set value to 0 if they are not wanted.
 if !exists("g:autocscope_menus")
   let g:autocscope_menus = 1
 endif
 
-" If set to 1, use gtags-cscope which is faster than cscope.
+" If set to 1, use gtags-cscope which is faster than cscope / cscope_bd_gen.
+" The default is 0, do not use gtags-cscope, use cscope / cscope_db_gen instead.
 if !exists("g:autocscope_use_gtags")
   let g:autocscope_use_gtags = 0
 endif
+
+" If set to 1, use the cscope database generator script "cscope_db_gen" which
+" can examine more that Cscope's C (.c & .h), lex (.l), and yacc (.y) files.
+" The default is 1, use cscope_db_gen. Set value to 0 if cscope is wanted.
+if !exists("g:autocscope_use_cscope_db_gen")
+  let g:autocscope_use_cscope_db_gen = 1
+endif
+
+"    """"""""""""" key map timeouts """""""""""""
+"    "
+"    " By default Vim will only wait 1 second for each keystroke in a mapping.
+"    " You may find that too short with the above typemaps. If so, you should
+"    " either turn off mapping timeouts via 'notimeout'.
+"    "
+"    "set notimeout
+"    "
+"    " Or, you can keep timeouts, by uncommenting the timeoutlen line below,
+"    " with your own personal favorite value (in milliseconds):
+"    "
+"    "set timeoutlen=4000
+set timeoutlen=3000
+"    "
+"    " Either way, since mapping timeout settings by default also set the
+"    " timeouts for multicharacter 'keys codes' (like <F1>), you should also
+"    " set ttimeout and ttimeoutlen: otherwise, you will experience strange
+"    " delays as vim waits for a keystroke after you hit ESC (it will be
+"    " waiting to see if the ESC is actually part of a key code like <F1>).
+"    "
+"    "set ttimeout
+set ttimeout
+"    "
+"    " A tenth of a second works well for key code timeouts. If you
+"    " experience problems and have a slow terminal or network connection
+"    " set it higher. If you don't set ttimeoutlen, a sluggish value for
+"    " timeoutlent (default: 1000 = 1 second) is used.
+"    "
+"    "set ttimeoutlen=100
+set ttimeoutlen=100
 
 " ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 " ^^^^^^^^^^ Place code that may need modification above this point. ^^^^^^^^^^
@@ -245,7 +289,7 @@ function s:Cycle_macros_menus()
       nmenu &Cscope.Find.Including<Tab><c-\\>i
         \ :cs find i <C-R>=expand("<cfile>")<CR><CR>
 "      nmenu &Cscope.Add :cs add
-"      nmenu &Cscope.Remove  :cs kill
+"      nmenu &Cscope.Remove :cs kill
       nmenu &Cscope.Reset :cs reset<cr>
       nmenu &Cscope.Show :cs show<cr>
       " Need to figure out how to do the add/remove. May end up writing
@@ -318,35 +362,29 @@ function s:Update_csdb()
     if g:autocscope_auto_update != 1
       return
     endif
-
     if exists("b:csdbpath")
       if cscope_connection(3, g:autocscope_tagfile_name, b:csdbpath)
           if g:autocscope_use_gtags == 1
-              "exe "silent !cd " . b:csdbpath . " && global -u"
               exe "silent !cd " . b:csdbpath . " && global -u"
-" Cscope only examines C (.c & .h), lex (.l), and yacc (.y) source files.
-"          else
-"              "exe "silent !cd " . b:csdbpath . " && cscope -Rbq"
-"              exe "silent !cd " . b:csdbpath . " && cscope -Rbq"
-"
-" The cscope_db_gen script allows source files other than the Cscope defaults
-" to be examined by Cscope (C++ files etc.). When called with the -q "quick"
-" flag, cscope_db_gen uses the existing cscope.files list of files. So if new
-" files are created, cscope_db_gen without flags must be executed in the
-" repository's base directory.
-          else
-              "exe "silent !cd " . b:csdbpath . " && cscope_db_gen -q"
+          " The cscope_db_gen script allows source files other than the
+          " Cscope defaults to be examined by Cscope (C++ files etc.). When
+          " called with the -q "quick" flag, cscope_db_gen uses the existing
+          " cscope.files list of files. So if new files are created,
+          " cscope_db_gen without flags must be executed in the repository's
+          " base directory.
+          else if g:autocscope_use_cscope_db_gen = 1
               exe "silent !cd " . b:csdbpath . " && cscope_db_gen -q"
+          " Cscope only examines C (.c & .h), lex (.l), and yacc (.y) files.
+          else
+             exe "silent !cd " . b:csdbpath . " && cscope -Rbq"
           endif
-
           set nocsverb
           exe "cs reset"
           set csverb
       endif
-  endif
+    endif
 endfunc
 
-" If set to 1, use gtags-cscope which is faster than cscope.
 if g:autocscope_use_gtags == 1
     let g:autocscope_tagfile_name = "GTAGS"
     set cscopeprg=gtags-cscope
@@ -390,35 +428,3 @@ augroup autoload_cscope
 augroup END
 
 let &cpo = s:save_cpo
-
-"    """"""""""""" key map timeouts
-"    "
-"    " By default Vim will only wait 1 second for each keystroke in a mapping.
-"    " You may find that too short with the above typemaps.  If so, you should
-"    " either turn off mapping timeouts via 'notimeout'.
-"    "
-"    "set notimeout
-"    "
-"    " Or, you can keep timeouts, by uncommenting the timeoutlen line below,
-"    " with your own personal favorite value (in milliseconds):
-"    "
-"    "set timeoutlen=4000
-set timeoutlen=3000
-"    "
-"    " Either way, since mapping timeout settings by default also set the
-"    " timeouts for multicharacter 'keys codes' (like <F1>), you should also
-"    " set ttimeout and ttimeoutlen: otherwise, you will experience strange
-"    " delays as vim waits for a keystroke after you hit ESC (it will be
-"    " waiting to see if the ESC is actually part of a key code like <F1>).
-"    "
-"    "set ttimeout
-set ttimeout
-"    "
-"    " personally, I find a tenth of a second to work well for key code
-"    " timeouts. If you experience problems and have a slow terminal or network
-"    " connection, set it higher.  If you don't set ttimeoutlen, the value for
-"    " timeoutlent (default: 1000 = 1 second, which is sluggish) is used.
-"    "
-"    "set ttimeoutlen=100
-set ttimeoutlen=100
-"
