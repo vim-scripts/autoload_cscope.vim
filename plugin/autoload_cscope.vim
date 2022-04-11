@@ -372,7 +372,7 @@ function s:Update_csdb()
           " cscope.files list of files. So if new files are created,
           " cscope_db_gen without flags must be executed in the repository's
           " base directory.
-          else if g:autocscope_use_cscope_db_gen = 1
+          elseif g:autocscope_use_cscope_db_gen == 1
               exe "silent !cd " . b:csdbpath . " && cscope_db_gen -q"
           " Cscope only examines C (.c & .h), lex (.l), and yacc (.y) files.
           else
