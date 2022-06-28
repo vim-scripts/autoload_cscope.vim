@@ -1,5 +1,5 @@
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" autoload_cscope.vim: Vim global plugin for autoloading Cscope databases
+" cscope_helper.vim: Vim global plugin for Cscope databases
 "
 " Based on revision: 0.5 of autoload_cscope.vim by Michael Conrad Tadpol Tilsra
 " https://www.vim.org/scripts/script.php?script_id=157
@@ -22,7 +22,7 @@
 " Copyright (c) 2022 Dan Nygren.
 " BSD 0-clause license, "Zero Clause BSD", SPDX: 0BSD
 "
-"   Save this file as ~/.vim/plugin/autoload_cscope.vim so you can invoke
+"   Save this file as ~/.vim/plugin/cscope_helper.vim so you can invoke
 " vim/gvim in subdirectories and still get cscope.out loaded. It performs a
 " search starting at the directory that the edited file is in, checking the
 " parent directories until it finds the cscope.out file. Therefore you can
