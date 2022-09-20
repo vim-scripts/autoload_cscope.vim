@@ -1,9 +1,25 @@
-This is a mirror of http://www.vim.org/scripts/script.php?script_id=157
+This Vim plugin is based on prior work from a number of authors. See the
+cscope_helper.vim comment header block for details.
 
-This plugin will automatically load cscope.out databases into vim when you open a C file. (headers included)
+Save this file as ~/.vim/plugin/cscope_helper.vim so you can invoke vim/gvim in
+subdirectories and still get cscope.out loaded.
 
-It does a search starting at the directory that the file is in, and checking the parent directories until it find the cscope.out file.  The idea being that you can start editing a source file deep in a project dir, and it will find the correct cscope database a couple dirs up.
+A prerequisite for use is that an initial Cscope database has been generated.
+Cscope can be executed on the command line, or a script like cscope_db_gen can
+be used to generate the database. See https://github.com/dnygren/cscope_db_gen
+for an example of how to generate a Cscope database for C/C++.
 
-This version also creates some macros and a menu that can be useful.  If you don't like them, you can set g:autocscope_menus to 0 and they won't load.
+This plugin will automatically load a cscope.out database (created manually in
+the base directory of a source code file tree) into Vim when you open a file.
 
+It performs a search starting at the directory that the edited file is in,
+checking the parent directories until it finds the cscope.out file. Therefore
+you can start editing a file deep in a project directory, and it will find the
+correct Cscope database. It will also automatically update the cscope database
+after file saves. If new files are created, the cscope.out database must be
+recreated manually.
 
+Keystroke macros and a pull down menu are provided to invoke the Cscope
+functions.
+
+A cheatsheet is provided to assist in executing the keystroke macros.
